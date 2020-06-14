@@ -77,7 +77,7 @@ class ProblemWidget extends StatelessWidget {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (BuildContext context) {
-            return ProblemDetailWidget(id, title, content);
+            return ProblemDetailWidget(id, title, content, favorited, toggleFavorited);
           },
         ),
       );
@@ -115,13 +115,29 @@ class ProblemDetailWidget extends StatelessWidget {
   final int id;
   final String title;
   final String content;
+  final int favorited;
+  final VoidCallback toggleFavorited;
   final TextEditingController answerController;
-  ProblemDetailWidget(this.id, this.title, this.content) : answerController = TextEditingController();
+  ProblemDetailWidget(
+    this.id,
+    this.title,
+    this.content,
+    this.favorited,
+    this.toggleFavorited,
+  ) : answerController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Problem $id")),
+      appBar: AppBar(
+        title: Text("Problem $id"),
+        actions: <Widget>[
+          IconButton(
+            onPressed: toggleFavorited,
+            icon: Icon(this.favorited == 1 ? Icons.star : Icons.star_border),
+          )
+        ],
+      ),
       body: Center(
         child: Column(
           children: <Widget>[
