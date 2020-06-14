@@ -4,22 +4,6 @@ import 'package:html/dom.dart';
 import 'package:flutter/foundation.dart';
 import 'data_utils.dart';
 
-/*
-There's likely an easier way to do this, but this seems to work.
-
-1. Go to PE site -> Account, select all Active Logins and click "Remove Selected".
-2. Refresh the page; you'll have to sign in again (make sure Remember Me is checked)
-3. Close the PE tab
-4. Click the triple dots in the top-right corner then Settings
-5. Under 'Privacy and security', click Site settings.
-6. Click Cookies and site date and then "See all cookies and site data".
-7. At the top right, search for euler
-8. Click on the row for projecteuler.net
-9. Copy the Content from keep_alive into the app
-10. Delete the keep_alive and PHPSESSID cookies from chrome by clicking Remove All
-  (you'll have to sign in again on the website the next time that you visit it; this is to ensure
-  you have separate cookies for the app and the browser)
-*/
 
 final RegExp KEEP_ALIVE = RegExp(r"keep_alive=([\w%]+)");
 final RegExp PHP_SESS_ID = RegExp(r"PHPSESSID=([\w%]+)");
@@ -28,8 +12,6 @@ const int INCORRECT = 1;
 const int ERROR = 2;
 
 Future<int> postSolution(int problemId, String solution) async {
-  // String keepAlive = "1587099225%231348184%23BW2e9Rq0Qm65EddyppMKZl1ZHmQNYTgx";
-  // setCookie(keepAlive);
   String keepAlive = await getCookie();
   final String url = "https://projecteuler.net/problem=$problemId";
   final Client client = Client();
