@@ -18,9 +18,14 @@ Future<void> main() async {
         .execute("ALTER TABLE Problem ADD COLUMN favorited INTEGER DEFAULT 0");
   });
 
+  final migration2to3 = Migration(2, 3, (database) async {
+    await database.execute(
+        "CREATE TABLE IF NOT EXISTS Code (id INTEGER, language TEXT, code TEXT, PRIMARY KEY (id))");
+  });
+
   final database = await $FloorAppDatabase
       .databaseBuilder(DB_NAME)
-      .addMigrations([migration1to2]).build();
+      .addMigrations([migration1to2, migration2to3]).build();
   runApp(ProjEulerApp(database));
 }
 
@@ -95,13 +100,13 @@ class _ProblemListState extends State<ProblemList> {
       loadingOrList = ListView.builder(
         itemCount: visibleProblems.length,
         itemBuilder: (BuildContext context, int index) {
-          return ScopedModelDescendant<ProblemModel>(builder:
-              (BuildContext context, Widget child, ProblemModel model) =>
-            ProblemWidget(
-                key: UniqueKey(),
-                problem: visibleProblems[index],
-                problemModel: model)
-          );
+          return ScopedModelDescendant<ProblemModel>(
+              builder:
+                  (BuildContext context, Widget child, ProblemModel model) =>
+                      ProblemWidget(
+                          key: UniqueKey(),
+                          problem: visibleProblems[index],
+                          problemModel: model));
         },
       );
     }

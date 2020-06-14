@@ -72,7 +72,9 @@ class ProblemModel extends Model {
   List<Problem> visibleProblems;
   bool onlyFavoritesVisible = false;
 
-  ProblemModel(this.database) : problemDao = database.problemDao, codeDao = database.codeDao {
+  ProblemModel(this.database)
+      : problemDao = database.problemDao,
+        codeDao = database.codeDao {
     loading = true;
     loadProblems();
   }
@@ -112,8 +114,8 @@ class ProblemModel extends Model {
     return codeDao.getCode(id);
   }
 
-  Future<void> updateCode(Code code) async {
-    await codeDao.updateCode(code);
+  Future<void> insertOrUpdateCode(Code code) async {
+    await codeDao.insertOrUpdateCode(code);
   }
 }
 
@@ -202,7 +204,7 @@ class ProblemDetailWidget extends StatefulWidget {
 }
 
 class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
-  final Problem problem;
+  Problem problem;
   final ProblemModel problemModel;
   final TextEditingController answerController;
   final TextEditingController codeController;
@@ -211,14 +213,16 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
   _ProblemDetailWidgetState(this.problem, this.problemModel)
       : answerController = TextEditingController(),
         codeController = TextEditingController() {
-          loading = true;
-          loadCode();
-        }
+    loading = true;
+    loadCode();
+  }
 
   Future<void> loadCode() async {
     Code code = await problemModel.getCode(problem.id);
-    codeController.text = code.code;
-    language = code.language;
+    if (code != null) {
+      codeController.text = code.code;
+      language = code.language;
+    }
     loading = false;
   }
 
@@ -246,44 +250,79 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
           )
         ],
       ),
-      body: Center(
-        child: ListView(
-          children: <Widget>[
-            Text(problem.title),
-            Text(problem.content),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: TextField(
-                      controller: answerController,
-                      decoration: InputDecoration(
-                        hintText: "Answer",
+      body: GestureDetector(
+        onHorizontalDragEnd: swipe,
+        child: Center(
+          child: ListView(
+            children: <Widget>[
+              Text(problem.title),
+              Text(problem.content),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: TextField(
+                        controller: answerController,
+                        decoration: InputDecoration(
+                          hintText: "Answer",
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: RaisedButton(
-                    onPressed: submitAnswer,
-                    child: Text("Submit"),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: RaisedButton(
+                      onPressed: submitAnswer,
+                      child: Text("Submit"),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: TextField(
-                controller: codeController,
-                maxLines: null,
+                ],
               ),
-            ),
-          ],
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: TextField(
+                  controller: codeController,
+                  autocorrect: false,
+                  // enableSuggestions: false,
+                  maxLines: null,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  void swipe(DragEndDetails details) {
+    double velX = details.primaryVelocity;
+    debugPrint("swipe with horizontal velocity = $velX");
+
+    int swipeThreshold = 500;
+    bool swipeRight = velX < -swipeThreshold;
+    bool swipeLeft = velX > swipeThreshold;
+    int problemIdx = problemModel.visibleProblems.indexOf(problem);
+
+    int newIdx;
+    if (swipeRight) {
+      newIdx = problemIdx + 1;
+    } else if (swipeLeft) {
+      newIdx = problemIdx - 1;
+    } else {
+      return;
+    }
+
+    if (newIdx < 0 || newIdx >= problemModel.visibleProblems.length) {
+      return; // out of range
+    }
+
+    setState(() {
+      problem = problemModel.visibleProblems[newIdx];
+      answerController.text = "";
+      loading = true;
+      loadCode();
+    });
   }
 
   void submitAnswer() {
@@ -297,8 +336,8 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
   }
 
   void saveCode() {
-    debugPrint("saving code");
+    debugPrint("saving code ${codeController.text}");
     Code code = Code(problem.id, language, codeController.text);
-    problemModel.updateCode(code);
+    problemModel.insertOrUpdateCode(code);
   }
 }
