@@ -42,6 +42,10 @@ class Settings extends StatelessWidget {
               child: Text("Export Code"),
               onPressed: exportCode,
             ),
+            RaisedButton(
+              child: Text("Check for New Problems"),
+              onPressed: checkForNewProblems,
+            ),
           ],
         ),
       ),
@@ -100,5 +104,9 @@ class Settings extends StatelessWidget {
     // just update this in navigateToSettings
     // String code = await exportCodeTable(codeDao);
     // Share.share()
+  }
+
+  void checkForNewProblems() {
+    debugPrint("checking for new problems");
   }
 }
