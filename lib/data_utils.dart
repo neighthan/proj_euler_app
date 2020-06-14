@@ -5,6 +5,10 @@ import 'package:html/dom.dart' as dom;
 import 'package:shared_preferences/shared_preferences.dart';
 
 const String MAX_PROBLEM_ID_KEY = "maxProblemId";
+// When PROBLEM_TABLE_VERSION is updated, we delete the problem table and re-create it.
+// This is done, e.g., when we add or remove columns from the problem table.
+// Do NOT delete the entire database file because it also contains user code.
+const int PROBLEM_TABLE_VERSION = 1;
 
 Future getProblem(int id) async {
   Client client = Client();

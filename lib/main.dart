@@ -41,6 +41,7 @@ class _ProblemListState extends State<ProblemList> {
   final ProblemDao problemDao;
   bool loading = false;
   List<Problem> problems = [];
+  List<bool> expanded = [];
 
   _ProblemListState(this.problemDao) {
     loading = true;
@@ -64,6 +65,7 @@ class _ProblemListState extends State<ProblemList> {
     final List<Problem> allProblems = await problemDao.getAllProblems();
     setState(() {
       problems = allProblems;
+      expanded = List<bool>.generate(problems.length, (index) => false);
       loading = false;
     });
   }
@@ -75,11 +77,16 @@ class _ProblemListState extends State<ProblemList> {
       loadingOrList = Text("Loading");
     } else {
       loadingOrList = ListView.builder(
-        padding: const EdgeInsets.all(8),
         itemCount: problems.length,
         itemBuilder: (BuildContext context, int index) {
           final Problem problem = problems[index];
-          return Text(problem.shortTitle());
+          void onTap() {
+            debugPrint("tapped $index");
+            setState(() {
+              expanded[index] = !expanded[index];
+            });
+          }
+          return ProblemWidget(problem.id, problem.shortTitle(), problem.content, expanded[index], onTap);
         },
       );
     }
