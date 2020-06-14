@@ -115,7 +115,8 @@ class ProblemDetailWidget extends StatelessWidget {
   final int id;
   final String title;
   final String content;
-  ProblemDetailWidget(this.id, this.title, this.content);
+  final TextEditingController answerController;
+  ProblemDetailWidget(this.id, this.title, this.content) : answerController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -126,9 +127,28 @@ class ProblemDetailWidget extends StatelessWidget {
           children: <Widget>[
             Text(title),
             Text(content),
+            Row(
+              children: <Widget>[
+                TextField(
+                  // maxLines: null, might need this?
+                  controller: answerController,
+                  decoration: InputDecoration(
+                    hintText: "Answer",
+                  ),
+                ),
+                RaisedButton(
+                  onPressed: submitAnswer,
+                  child: Text("Submit"),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
+  }
+
+  void submitAnswer() {
+    debugPrint("submitted answer $answerController.text for problem $id.");
   }
 }
