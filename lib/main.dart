@@ -1,84 +1,95 @@
+import 'package:ProjectEuler/problem.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
-import 'package:html/parser.dart';
-import 'package:html/dom.dart' as dom;
+import 'database.dart';
+import 'problem.dart';
 
+// any name for the .db file is fine; the class name is Floor<name of db class>
+const String DB_NAME = "proj_euler2.db";
 
-void main() {
-  runApp(ProjEulerApp());
+Future<void> main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  final database = await $FloorAppDatabase.databaseBuilder(DB_NAME).build();
+  final problemDao = database.problemDao;
+  runApp(ProjEulerApp(problemDao));
 }
 
 class ProjEulerApp extends StatelessWidget {
+  final ProblemDao problemDao;
+  ProjEulerApp(this.problemDao);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Project Euler',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: ProblemList(title: 'Problems'),
+      home: ProblemList(problemDao: problemDao),
     );
   }
 }
 
 class ProblemList extends StatefulWidget {
-  final String title;
-  ProblemList({Key key, this.title}) : super(key: key);
+  final ProblemDao problemDao;
+  ProblemList({Key key, this.problemDao}) : super(key: key);
 
   @override
-  _ProblemListState createState() => _ProblemListState();
-}
-
-Future getProblem(int id) async {
-  Client client = Client();
-  Response response = await client.get(
-    'https://projecteuler.net/problem=$id'
-  );
-  dom.Document document = parse(response.body);
-  String title = document.querySelector("#content > h2").text;
-  if (title == "Problems Archive") {
-    return null;
-  }
-  String content = document.querySelector("#content > .problem_content").text;
-  return {"id": id, "title": title, "content": content};
+  _ProblemListState createState() => _ProblemListState(problemDao);
 }
 
 class _ProblemListState extends State<ProblemList> {
-  int problemId = 0;
-  String title = "";
-  String content = "";
+  final ProblemDao problemDao;
+  bool loading = false;
+  List<Problem> problems = [];
 
+  _ProblemListState(this.problemDao) {
+    loading = true;
+    loadProblems();
+  }
 
-  void _nextProblem() async {
-    problemId++;
-    var problem = await getProblem(problemId);
-    print(problem);
+  Future<void> loadProblems() async {
+    // int maxProblemId = await getMaxProblemId();
+    // int currentMaxId = await getMaxProblemStoredId();
+    // if (maxProblemId > currentMaxId) {
+    //   for (int problemId = currentMaxId + 1; problemId <= maxProblemId; problemId++) {
+    //     Map<String, Object> problemDict = await getProblem(problemId);
+    //     assert(problemDict != null);
+    //     Problem problem = Problem(problemDict["id"], problemDict["title"], problemDict["content"]);
+    //     widget.problemDao.insertProblem(problem);
+    //     problems.add(problem);
+    //   }
+    //   updateMaxProbleStoredId(maxProblemId);
+    // }
+
+    final List<Problem> allProblems = await problemDao.getAllProblems();
     setState(() {
-      title = problem["title"];
-      content = problem["content"];
+      problems = allProblems;
+      loading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    Widget loadingOrList;
+    if (loading) {
+      loadingOrList = Text("Loading");
+    } else {
+      loadingOrList = ListView.builder(
+        padding: const EdgeInsets.all(8),
+        itemCount: problems.length,
+        itemBuilder: (BuildContext context, int index) {
+          final Problem problem = problems[index];
+          return Text(problem.shortTitle());
+        },
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text("Problems"),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text('Problem $problemId'),
-            Text(title),
-            Text(content),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _nextProblem,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
+        child: loadingOrList,
       ),
     );
   }
