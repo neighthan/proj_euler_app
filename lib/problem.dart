@@ -210,6 +210,14 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
         title: Text("Problem ${problem.id}"),
         actions: <Widget>[
           IconButton(
+            onPressed: copyCode,
+            icon: Icon(Icons.content_copy),
+          ),
+          IconButton(
+            onPressed: saveCode,
+            icon: Icon(Icons.save),
+          ),
+          IconButton(
             onPressed: toggleFavorited,
             icon: Icon(problem.favorited == 1 ? Icons.star : Icons.star_border),
           )
@@ -248,22 +256,6 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
                 controller: codeController,
                 maxLines: null,
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                RaisedButton(
-                  onPressed: copyCode,
-                  child: Text("Copy"),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                ),
-                RaisedButton(
-                  onPressed: saveCode,
-                  child: Text("Save"),
-                ),
-              ],
             ),
           ],
         ),
