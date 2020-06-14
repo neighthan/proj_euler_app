@@ -17,7 +17,7 @@ class Problem {
   final String title;
   final String content;
   // floor doesn't store bools; just a 0 / 1 int
-  int favorited;
+  bool favorited;
   @ignore
   bool expanded = false;
 
@@ -94,7 +94,7 @@ class ProblemModel extends Model {
     onlyFavoritesVisible = !onlyFavoritesVisible;
     if (onlyFavoritesVisible) {
       visibleProblems =
-          allProblems.where((problem) => problem.favorited == 1).toList();
+          allProblems.where((problem) => problem.favorited).toList();
     } else {
       visibleProblems = allProblems;
     }
@@ -102,8 +102,8 @@ class ProblemModel extends Model {
   }
 
   toggleFavoriteProblem(Problem problem) {
-    problem.favorited = problem.favorited == 1 ? 0 : 1;
-    if (onlyFavoritesVisible && problem.favorited == 0) {
+    problem.favorited = !problem.favorited;
+    if (onlyFavoritesVisible && !problem.favorited) {
       visibleProblems.remove(problem);
     }
     problemDao.updateProblem(problem);
@@ -154,9 +154,6 @@ class _ProblemWidgetState extends State<ProblemWidget> {
 
     void toggleFavorited() {
       problemModel.toggleFavoriteProblem(problem);
-      // setState(() {
-      //   problem.favorited = problem.favorited == 1 ? 0 : 1;
-      // });
     }
 
     void toggleExpanded() {
@@ -168,7 +165,7 @@ class _ProblemWidgetState extends State<ProblemWidget> {
     final listTile = ListTile(
       title: Text("${problem.id}. ${problem.shortTitle()}"),
       trailing: IconButton(
-        icon: Icon(problem.favorited == 1 ? Icons.star : Icons.star_border),
+        icon: Icon(problem.favorited ? Icons.star : Icons.star_border),
         onPressed: toggleFavorited,
       ),
       onTap: toggleExpanded,
@@ -208,6 +205,7 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
   final ProblemModel problemModel;
   final TextEditingController answerController;
   final TextEditingController codeController;
+  static const int swipeThreshold = 500; // even higher would probably be fine
   String language = "julia";
   bool loading;
   _ProblemDetailWidgetState(this.problem, this.problemModel)
@@ -246,7 +244,7 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
           ),
           IconButton(
             onPressed: toggleFavorited,
-            icon: Icon(problem.favorited == 1 ? Icons.star : Icons.star_border),
+            icon: Icon(problem.favorited ? Icons.star : Icons.star_border),
           )
         ],
       ),
@@ -297,9 +295,6 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
 
   void swipe(DragEndDetails details) {
     double velX = details.primaryVelocity;
-    debugPrint("swipe with horizontal velocity = $velX");
-
-    int swipeThreshold = 500;
     bool swipeRight = velX < -swipeThreshold;
     bool swipeLeft = velX > swipeThreshold;
     int problemIdx = problemModel.visibleProblems.indexOf(problem);

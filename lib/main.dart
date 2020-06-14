@@ -13,19 +13,21 @@ const String DB_NAME = "proj_euler2.db";
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final migration1to2 = Migration(1, 2, (database) async {
-    await database
-        .execute("ALTER TABLE Problem ADD COLUMN favorited INTEGER DEFAULT 0");
-  });
-
-  final migration2to3 = Migration(2, 3, (database) async {
-    await database.execute(
-        "CREATE TABLE IF NOT EXISTS Code (id INTEGER, language TEXT, code TEXT, PRIMARY KEY (id))");
-  });
+  final List<Migration> migrations = [
+    Migration(1, 2, (database) async {
+      await database.execute(
+          "ALTER TABLE Problem ADD COLUMN favorited INTEGER DEFAULT 0");
+    }),
+    Migration(2, 3, (database) async {
+      await database.execute(
+          "CREATE TABLE IF NOT EXISTS Code (id INTEGER, language TEXT, code TEXT, PRIMARY KEY (id))");
+    }),
+  ];
 
   final database = await $FloorAppDatabase
       .databaseBuilder(DB_NAME)
-      .addMigrations([migration1to2, migration2to3]).build();
+      .addMigrations(migrations)
+      .build();
   runApp(ProjEulerApp(database));
 }
 
