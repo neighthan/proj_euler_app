@@ -21,20 +21,17 @@ Future<void> main() async {
   final database = await $FloorAppDatabase
       .databaseBuilder(DB_NAME)
       .addMigrations([migration1to2]).build();
-  final ProblemDao problemDao = database.problemDao;
-  final CodeDao codeDao = database.codeDao;
-
-  runApp(ProjEulerApp(problemDao));
+  runApp(ProjEulerApp(database));
 }
 
 class ProjEulerApp extends StatelessWidget {
-  final ProblemDao problemDao;
-  ProjEulerApp(this.problemDao);
+  final database;
+  ProjEulerApp(this.database);
 
   @override
   Widget build(BuildContext context) {
     return ScopedModel<ProblemModel>(
-      model: ProblemModel(problemDao),
+      model: ProblemModel(database),
       child: MaterialApp(
         title: 'Project Euler',
         theme: ThemeData(

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:scoped_model/scoped_model.dart';
+import 'code.dart';
 
 const int MAX_TITLE_LENGTH = 150;
 
@@ -57,8 +58,13 @@ abstract class ProblemDao {
   Future<void> deleteAllProblems();
 }
 
+// TODO - a ProblemModel and a CodeModel would be better, but
+// do this for now since we're switching from scoped-model to
+// Provider soon anyway; make the change then.
 class ProblemModel extends Model {
+  final database;
   final ProblemDao problemDao;
+  final CodeDao codeDao;
   bool loading;
   // TODO: maybe make getters with unmodifiable views for these?
   // changes should only happen through ProblemModel so listeners are notified
@@ -66,7 +72,7 @@ class ProblemModel extends Model {
   List<Problem> visibleProblems;
   bool onlyFavoritesVisible = false;
 
-  ProblemModel(this.problemDao) {
+  ProblemModel(this.database) : problemDao = database.problemDao, codeDao = database.codeDao {
     loading = true;
     loadProblems();
   }
@@ -100,6 +106,14 @@ class ProblemModel extends Model {
     }
     problemDao.updateProblem(problem);
     notifyListeners();
+  }
+
+  Future<Code> getCode(int id) async {
+    return codeDao.getCode(id);
+  }
+
+  Future<void> updateCode(Code code) async {
+    await codeDao.updateCode(code);
   }
 }
 
@@ -192,17 +206,26 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
   final ProblemModel problemModel;
   final TextEditingController answerController;
   final TextEditingController codeController;
+  String language = "julia";
+  bool loading;
   _ProblemDetailWidgetState(this.problem, this.problemModel)
       : answerController = TextEditingController(),
-        codeController = TextEditingController();
+        codeController = TextEditingController() {
+          loading = true;
+          loadCode();
+        }
+
+  Future<void> loadCode() async {
+    Code code = await problemModel.getCode(problem.id);
+    codeController.text = code.code;
+    language = code.language;
+    loading = false;
+  }
 
   @override
   Widget build(BuildContext context) {
     void toggleFavorited() {
       problemModel.toggleFavoriteProblem(problem);
-      // setState(() {
-      //   problem.favorited = problem.favorited == 1 ? 0 : 1;
-      // });
     }
 
     return Scaffold(
@@ -275,5 +298,7 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
 
   void saveCode() {
     debugPrint("saving code");
+    Code code = Code(problem.id, language, codeController.text);
+    problemModel.updateCode(code);
   }
 }
