@@ -25,7 +25,7 @@ Future<void> main() async {
     }),
     Migration(3, 4, (database) async {
       await database.execute("ALTER TABLE Problem ADD COLUMN solved INTEGER DEFAULT 0");
-      await database.execute("ALTER TABLE Problem ADD COLUMN solution INTEGER DEFAULT 0");
+      await database.execute("ALTER TABLE Problem ADD COLUMN solution TEXT DEFAULT ''");
     }),
   ];
 

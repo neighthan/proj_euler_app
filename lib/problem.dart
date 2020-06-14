@@ -17,11 +17,12 @@ class Problem {
   final String content;
   bool favorited;
   bool solved;
-  int solution;
+  String solution;
   @ignore
   bool expanded = false;
 
-  Problem(this.id, this.title, this.content, {this.favorited = false, this.solved = false, this.solution = 0});
+  Problem(this.id, this.title, this.content,
+      {this.favorited = false, this.solved = false, this.solution = ""});
 
   @override
   String toString() {
@@ -71,8 +72,8 @@ class ProblemModel extends Model {
     loadProblems();
   }
 
-  // you can await this to make sure the model is done loading
-  // this isn't expected to notifyListeners
+  // You can await this to make sure the model is done loading.
+  // This isn't expected to notifyListeners
   Future<void> loadProblems() async {
     if (loading) {
       allProblems = await problemDao.getAllProblems();
@@ -108,6 +109,13 @@ class ProblemModel extends Model {
 
   Future<void> insertOrUpdateCode(Code code) async {
     await codeDao.insertOrUpdateCode(code);
+  }
+
+  Future<void> addProblemSolution(Problem problem, String solution) async {
+    problem.solved = true;
+    problem.solution = solution;
+    await problemDao.updateProblem(problem);
+    notifyListeners();
   }
 }
 
@@ -228,6 +236,38 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
       problemModel.toggleFavoriteProblem(problem);
     }
 
+    Widget solutionWidget;
+
+    if (problem.solved) {
+      solutionWidget = Text("Solution: ${problem.solution}");
+    } else {
+      solutionWidget = Row(
+        children: <Widget>[
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: TextField(
+                controller: answerController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: "Answer",
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10),
+            child: Builder(builder: (BuildContext context) {
+              return RaisedButton(
+                onPressed: () => submitAnswer(context),
+                child: Text("Submit"),
+              );
+            }),
+          ),
+        ],
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Problem ${problem.id}"),
@@ -258,31 +298,7 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
             children: <Widget>[
               Text(problem.title),
               Text(problem.content),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: TextField(
-                        controller: answerController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          hintText: "Answer",
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Builder(builder: (BuildContext context) {
-                      return RaisedButton(
-                        onPressed: () => submitAnswer(context),
-                        child: Text("Submit"),
-                      );
-                    }),
-                  ),
-                ],
-              ),
+              solutionWidget,
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 10),
                 child: TextField(
@@ -332,11 +348,13 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
     ));
     debugPrint(
         "submitted answer ${answerController.text} for problem ${problem.id}.");
-    int ret = await postSolution(problem.id, answerController.text);
+    final String solution = answerController.text;
+    int ret = await postSolution(problem.id, solution);
     debugPrint("submit return = $ret");
     String snackbarMsg;
     Color color;
     if (ret == CORRECT) {
+      problemModel.addProblemSolution(problem, solution);
       snackbarMsg = "Correct answer!";
       color = Colors.green;
     } else if (ret == INCORRECT) {
@@ -346,7 +364,8 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
       // TODO: have postSolution return something more specific so we know what the error was.
       // probably just have it return a string instead of an int? Then we show that string
       // directly as the message. The color we can figure out.
-      snackbarMsg = "Error submitting answer; check your cookie and internet connection.";
+      snackbarMsg =
+          "Error submitting answer; check your cookie and internet connection.";
       color = Colors.purple;
     } else {
       snackbarMsg = "Received unknown reponse.";
