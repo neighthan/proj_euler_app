@@ -23,17 +23,9 @@ class Problem {
 
   Problem(this.id, this.title, this.content, this.favorited);
 
-  String shortTitle() {
-    if (title.length > MAX_TITLE_LENGTH) {
-      return title.substring(0, MAX_TITLE_LENGTH);
-    } else {
-      return title;
-    }
-  }
-
   @override
   String toString() {
-    return "Problem $id [$favorited] (${shortTitle()}).";
+    return "Problem $id [$favorited] $title.";
   }
 }
 
@@ -163,7 +155,10 @@ class _ProblemWidgetState extends State<ProblemWidget> {
     }
 
     final listTile = ListTile(
-      title: Text("${problem.id}. ${problem.shortTitle()}"),
+      title: Text(
+        "${problem.id}. ${problem.title}",
+        overflow: TextOverflow.ellipsis,
+      ),
       trailing: IconButton(
         icon: Icon(problem.favorited ? Icons.star : Icons.star_border),
         onPressed: toggleFavorited,
