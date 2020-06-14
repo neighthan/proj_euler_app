@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:floor/floor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -56,8 +58,8 @@ class ProblemWidget extends StatelessWidget {
   final String content;
   final int favorited;
   final bool expanded;
-  final Function onTap;
-  final Function toggleFavorited;
+  final VoidCallback onTap;
+  final VoidCallback toggleFavorited;
   ProblemWidget(
     this.id,
     this.title,
@@ -70,6 +72,17 @@ class ProblemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void goToDetailPage() {
+      debugPrint("go to detail page for $id");
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (BuildContext context) {
+            return ProblemDetailWidget(id, title, content);
+          },
+        ),
+      );
+    }
+
     final listTile = ListTile(
       title: Text("$id. $title"),
       trailing: IconButton(
@@ -96,8 +109,26 @@ class ProblemWidget extends StatelessWidget {
       return listTile;
     }
   }
+}
 
-  goToDetailPage() {
-    debugPrint("go to detail page for $id");
+class ProblemDetailWidget extends StatelessWidget {
+  final int id;
+  final String title;
+  final String content;
+  ProblemDetailWidget(this.id, this.title, this.content);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Problem $id")),
+      body: Center(
+        child: Column(
+          children: <Widget>[
+            Text(title),
+            Text(content),
+          ],
+        ),
+      ),
+    );
   }
 }
