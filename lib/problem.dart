@@ -54,14 +54,28 @@ class ProblemWidget extends StatelessWidget {
   final int id;
   final String title;
   final String content;
+  final int favorited;
   final bool expanded;
-  final onTap;
-  ProblemWidget(this.id, this.title, this.content, this.expanded, this.onTap);
+  final Function onTap;
+  final Function toggleFavorited;
+  ProblemWidget(
+    this.id,
+    this.title,
+    this.content,
+    this.favorited,
+    this.expanded,
+    this.onTap,
+    this.toggleFavorited,
+  );
 
   @override
   Widget build(BuildContext context) {
     final listTile = ListTile(
       title: Text("$id. $title"),
+      trailing: IconButton(
+        icon: Icon(favorited == 1 ? Icons.star : Icons.star_border),
+        onPressed: toggleFavorited,
+      ),
       onTap: onTap,
       onLongPress: goToDetailPage,
     );

@@ -90,13 +90,29 @@ class _ProblemListState extends State<ProblemList> {
         itemCount: problems.length,
         itemBuilder: (BuildContext context, int index) {
           final Problem problem = problems[index];
+
           void onTap() {
             debugPrint("tapped $index");
             setState(() {
               expanded[index] = !expanded[index];
             });
           }
-          return ProblemWidget(problem.id, problem.shortTitle(), problem.content, expanded[index], onTap);
+
+          void toggleFavorited() {
+            setState(() {
+              problem.favorited = problem.favorited == 1 ? 0 : 1;
+            });
+          }
+
+          return ProblemWidget(
+            problem.id,
+            problem.shortTitle(),
+            problem.content,
+            problem.favorited,
+            expanded[index],
+            onTap,
+            toggleFavorited,
+          );
         },
       );
     }
