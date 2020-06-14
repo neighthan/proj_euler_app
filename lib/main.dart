@@ -1,21 +1,27 @@
 import 'package:ProjectEuler/data_utils.dart';
 import 'package:ProjectEuler/problem.dart';
 import 'package:flutter/material.dart';
+import 'package:floor/floor.dart';
 import 'database.dart';
 import 'problem.dart';
+import 'code.dart';
 
 // any name for the .db file is fine; the class name is Floor<name of db class>
 const String DB_NAME = "proj_euler2.db";
 
 Future<void> main() async{
   WidgetsFlutterBinding.ensureInitialized();
-  final database = await $FloorAppDatabase.databaseBuilder(DB_NAME).build();
-  final problemDao = database.problemDao;
 
-  Map<String, Object> ret = await problemTableNeedsUpdate();
-  if (ret["needsUpdate"]) {
-    await updateProblemTable(ret["version"], problemDao);
-  }
+  final migration1to2 = Migration(1, 2, (database) async {
+    await database.execute("ALTER TABLE Problem ADD COLUMN favorited INTEGER DEFAULT 0");
+  });
+
+  final database = await $FloorAppDatabase
+    .databaseBuilder(DB_NAME)
+    .addMigrations([migration1to2])
+    .build();
+  final ProblemDao problemDao = database.problemDao;
+  final CodeDao codeDao = database.codeDao;
 
   List<Problem> fav_probs = await problemDao.getFavoriteProblems();
   debugPrint("fav probs");

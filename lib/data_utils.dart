@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const String MAX_PROBLEM_ID_KEY = "maxProblemId";
 const String PROBLEM_TABLE_VERSION_KEY = "problemTableVersion";
-const int PROBLEM_TABLE_VERSION = 1;
 
 Future getProblem(int id) async {
   Client client = Client();
@@ -29,27 +28,6 @@ Future<int> getFromSharedPrefs(String key, {int defaultValue=0}) async {
 Future<void> setInSharedPrefs(String key, int value) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   prefs.setInt(key, value);
-}
-
-Future<int> getProblemTableVersion() {
-  return getFromSharedPrefs(PROBLEM_TABLE_VERSION_KEY);
-}
-
-Future<Map<String, Object>> problemTableNeedsUpdate() async {
-  int problemTableVersion = await getProblemTableVersion();
-  bool needsUpdate = problemTableVersion < PROBLEM_TABLE_VERSION;
-  return {"version": problemTableVersion, "needsUpdate": needsUpdate};
-}
-
-Future<void> updateProblemTable(int version, ProblemDao problemDao) async {
-  if (version == 0) {
-    // v1 adds the favorited column
-    await problemDao.addColumn("favorited", "INTEGER", "0");
-    version++;
-  }
-
-  assert(version == PROBLEM_TABLE_VERSION);
-  await setInSharedPrefs(PROBLEM_TABLE_VERSION_KEY, PROBLEM_TABLE_VERSION);
 }
 
 Future<int> getMaxProblemId() async {

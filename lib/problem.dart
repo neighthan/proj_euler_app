@@ -47,9 +47,6 @@ abstract class ProblemDao {
 
   @Query("DELETE FROM Problem")
   Future<void> deleteAllProblems();
-
-  @Query("ALTER TABLE Problem ADD COLUMN :name :type DEFAULT :defaultValue")
-  Future<void> addColumn(String name, String type, String defaultValue);
 }
 
 class ProblemWidget extends StatelessWidget {
