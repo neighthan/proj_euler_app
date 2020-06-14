@@ -50,7 +50,9 @@ class ProblemList extends StatefulWidget {
 class _ProblemListState extends State<ProblemList> {
   final ProblemDao problemDao;
   bool loading = false;
+  bool showingFavorites = false;
   List<Problem> problems = [];
+  List<Problem> showingProblems = [];
   List<bool> expanded = [];
 
   _ProblemListState(this.problemDao) {
@@ -75,6 +77,7 @@ class _ProblemListState extends State<ProblemList> {
     final List<Problem> allProblems = await problemDao.getAllProblems();
     setState(() {
       problems = allProblems;
+      showingProblems = allProblems;
       expanded = List<bool>.generate(problems.length, (index) => false);
       loading = false;
     });
@@ -120,10 +123,27 @@ class _ProblemListState extends State<ProblemList> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Problems"),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(showingFavorites ? Icons.star : Icons.star_border),
+            onPressed: toggleShowingFavorites,
+          ),
+        ],
       ),
       body: Center(
         child: loadingOrList,
       ),
     );
+  }
+
+  toggleShowingFavorites() {
+    showingFavorites = !showingFavorites;
+    setState(() {
+      if (showingFavorites) {
+        showingProblems = problems.where((problem) => problem.favorited == 1);
+      } else {
+        showingProblems = problems;
+      }
+    });
   }
 }
