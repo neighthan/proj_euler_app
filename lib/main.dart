@@ -2,6 +2,7 @@ import 'package:ProjectEuler/data_utils.dart';
 import 'package:ProjectEuler/problem.dart';
 import 'package:flutter/material.dart';
 import 'package:floor/floor.dart';
+import 'package:scoped_model/scoped_model.dart';
 import 'database.dart';
 import 'problem.dart';
 import 'code.dart';
@@ -9,23 +10,20 @@ import 'code.dart';
 // any name for the .db file is fine; the class name is Floor<name of db class>
 const String DB_NAME = "proj_euler2.db";
 
-Future<void> main() async{
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final migration1to2 = Migration(1, 2, (database) async {
-    await database.execute("ALTER TABLE Problem ADD COLUMN favorited INTEGER DEFAULT 0");
+    await database
+        .execute("ALTER TABLE Problem ADD COLUMN favorited INTEGER DEFAULT 0");
   });
 
   final database = await $FloorAppDatabase
-    .databaseBuilder(DB_NAME)
-    .addMigrations([migration1to2])
-    .build();
+      .databaseBuilder(DB_NAME)
+      .addMigrations([migration1to2]).build();
   final ProblemDao problemDao = database.problemDao;
   final CodeDao codeDao = database.codeDao;
 
-  List<Problem> fav_probs = await problemDao.getFavoriteProblems();
-  debugPrint("fav probs");
-  debugPrint(fav_probs.toString());
   runApp(ProjEulerApp(problemDao));
 }
 
@@ -35,59 +33,61 @@ class ProjEulerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Project Euler',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return ScopedModel<ProblemModel>(
+      model: ProblemModel(problemDao),
+      child: MaterialApp(
+        title: 'Project Euler',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: ScopedModelDescendant<ProblemModel>(
+          builder: (BuildContext context, child, ProblemModel model) =>
+              ProblemList(model),
+        ),
       ),
-      home: ProblemList(problemDao: problemDao),
     );
   }
 }
 
 class ProblemList extends StatefulWidget {
-  final ProblemDao problemDao;
-  ProblemList({Key key, this.problemDao}) : super(key: key);
+  final ProblemModel problemModel;
+  ProblemList(this.problemModel);
 
   @override
-  _ProblemListState createState() => _ProblemListState(problemDao);
+  _ProblemListState createState() => _ProblemListState(problemModel);
 }
 
 class _ProblemListState extends State<ProblemList> {
-  final ProblemDao problemDao;
-  bool loading = false;
+  final ProblemModel problemModel;
+  bool loading;
   bool showingFavorites = false;
-  List<Problem> problems = [];
-  List<Problem> showingProblems = [];
-  List<bool> expanded = [];
+  List<Problem> visibleProblems;
 
-  _ProblemListState(this.problemDao) {
+  _ProblemListState(this.problemModel) {
     loading = true;
     loadProblems();
   }
 
   Future<void> loadProblems() async {
-    // int maxProblemId = await getMaxProblemId();
-    // int currentMaxId = await getMaxProblemStoredId();
-    // if (maxProblemId > currentMaxId) {
-    //   for (int problemId = currentMaxId + 1; problemId <= maxProblemId; problemId++) {
-    //     Map<String, Object> problemDict = await getProblem(problemId);
-    //     assert(problemDict != null);
-    //     Problem problem = Problem(problemDict["id"], problemDict["title"], problemDict["content"]);
-    //     widget.problemDao.insertProblem(problem);
-    //     problems.add(problem);
-    //   }
-    //   updateMaxProbleStoredId(maxProblemId);
-    // }
-
-    final List<Problem> allProblems = await problemDao.getAllProblems();
+    await problemModel.loadProblems();
     setState(() {
-      problems = allProblems;
-      showingProblems = allProblems;
-      expanded = List<bool>.generate(problems.length, (index) => false);
+      visibleProblems = problemModel.visibleProblems;
       loading = false;
     });
   }
+
+  // int maxProblemId = await getMaxProblemId();
+  // int currentMaxId = await getMaxProblemStoredId();
+  // if (maxProblemId > currentMaxId) {
+  //   for (int problemId = currentMaxId + 1; problemId <= maxProblemId; problemId++) {
+  //     Map<String, Object> problemDict = await getProblem(problemId);
+  //     assert(problemDict != null);
+  //     Problem problem = Problem(problemDict["id"], problemDict["title"], problemDict["content"]);
+  //     widget.problemDao.insertProblem(problem);
+  //     problems.add(problem);
+  //   }
+  //   updateMaxProbleStoredId(maxProblemId);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -96,31 +96,14 @@ class _ProblemListState extends State<ProblemList> {
       loadingOrList = Text("Loading");
     } else {
       loadingOrList = ListView.builder(
-        itemCount: problems.length,
+        itemCount: visibleProblems.length,
         itemBuilder: (BuildContext context, int index) {
-          final Problem problem = problems[index];
-
-          void onTap() {
-            debugPrint("tapped $index");
-            setState(() {
-              expanded[index] = !expanded[index];
-            });
-          }
-
-          void toggleFavorited() {
-            setState(() {
-              problem.favorited = problem.favorited == 1 ? 0 : 1;
-            });
-          }
-
-          return ProblemWidget(
-            problem.id,
-            problem.shortTitle(),
-            problem.content,
-            problem.favorited,
-            expanded[index],
-            onTap,
-            toggleFavorited,
+          return ScopedModelDescendant<ProblemModel>(builder:
+              (BuildContext context, Widget child, ProblemModel model) =>
+            ProblemWidget(
+                key: UniqueKey(),
+                problem: visibleProblems[index],
+                problemModel: model)
           );
         },
       );
@@ -143,13 +126,11 @@ class _ProblemListState extends State<ProblemList> {
   }
 
   toggleShowingFavorites() {
-    showingFavorites = !showingFavorites;
+    // I use setState here instead of having the model notifyListeners because
+    // no other widgets should need updating based on this call
     setState(() {
-      if (showingFavorites) {
-        showingProblems = problems.where((problem) => problem.favorited == 1);
-      } else {
-        showingProblems = problems;
-      }
+      showingFavorites = !showingFavorites;
+      visibleProblems = problemModel.toggleOnlyFavoritesVisible();
     });
   }
 }
