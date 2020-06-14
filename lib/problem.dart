@@ -266,6 +266,7 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
                       padding: EdgeInsets.symmetric(horizontal: 10),
                       child: TextField(
                         controller: answerController,
+                        keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           hintText: "Answer",
                         ),
