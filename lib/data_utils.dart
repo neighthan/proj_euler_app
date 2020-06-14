@@ -1,13 +1,12 @@
 import 'dart:math';
+import 'package:ProjectEuler/problem.dart';
 import 'package:http/http.dart';
 import 'package:html/parser.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:shared_preferences/shared_preferences.dart';
 
 const String MAX_PROBLEM_ID_KEY = "maxProblemId";
-// When PROBLEM_TABLE_VERSION is updated, we delete the problem table and re-create it.
-// This is done, e.g., when we add or remove columns from the problem table.
-// Do NOT delete the entire database file because it also contains user code.
+const String PROBLEM_TABLE_VERSION_KEY = "problemTableVersion";
 const int PROBLEM_TABLE_VERSION = 1;
 
 Future getProblem(int id) async {
@@ -22,6 +21,37 @@ Future getProblem(int id) async {
   return {"id": id, "title": title, "content": content};
 }
 
+Future<int> getFromSharedPrefs(String key, {int defaultValue=0}) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getInt(key) ?? defaultValue;
+}
+
+Future<void> setInSharedPrefs(String key, int value) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  prefs.setInt(key, value);
+}
+
+Future<int> getProblemTableVersion() {
+  return getFromSharedPrefs(PROBLEM_TABLE_VERSION_KEY);
+}
+
+Future<Map<String, Object>> problemTableNeedsUpdate() async {
+  int problemTableVersion = await getProblemTableVersion();
+  bool needsUpdate = problemTableVersion < PROBLEM_TABLE_VERSION;
+  return {"version": problemTableVersion, "needsUpdate": needsUpdate};
+}
+
+Future<void> updateProblemTable(int version, ProblemDao problemDao) async {
+  if (version == 0) {
+    // v1 adds the favorited column
+    await problemDao.addColumn("favorited", "INTEGER", "0");
+    version++;
+  }
+
+  assert(version == PROBLEM_TABLE_VERSION);
+  await setInSharedPrefs(PROBLEM_TABLE_VERSION_KEY, PROBLEM_TABLE_VERSION);
+}
+
 Future<int> getMaxProblemId() async {
   Client client = Client();
   Response response = await client.get('https://projecteuler.net/recent');
@@ -32,8 +62,7 @@ Future<int> getMaxProblemId() async {
 
 Future<int> getMaxProblemStoredId() async {
   // the max problem id of problems stored in the database
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  return prefs.getInt(MAX_PROBLEM_ID_KEY) ?? 0;
+  return getFromSharedPrefs(MAX_PROBLEM_ID_KEY);
 }
 
 Future<void> updateMaxProbleStoredId(int maybeMaxId) async {

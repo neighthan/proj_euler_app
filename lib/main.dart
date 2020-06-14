@@ -1,3 +1,4 @@
+import 'package:ProjectEuler/data_utils.dart';
 import 'package:ProjectEuler/problem.dart';
 import 'package:flutter/material.dart';
 import 'database.dart';
@@ -10,6 +11,15 @@ Future<void> main() async{
   WidgetsFlutterBinding.ensureInitialized();
   final database = await $FloorAppDatabase.databaseBuilder(DB_NAME).build();
   final problemDao = database.problemDao;
+
+  Map<String, Object> ret = await problemTableNeedsUpdate();
+  if (ret["needsUpdate"]) {
+    await updateProblemTable(ret["version"], problemDao);
+  }
+
+  List<Problem> fav_probs = await problemDao.getFavoriteProblems();
+  debugPrint("fav probs");
+  debugPrint(fav_probs.toString());
   runApp(ProjEulerApp(problemDao));
 }
 

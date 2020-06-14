@@ -12,8 +12,4 @@ part 'database.g.dart'; // the generated code will be there
 @Database(version: 1, entities: [Problem])
 abstract class AppDatabase extends FloorDatabase {
   ProblemDao get problemDao;
-
-  Future<void> deleteDatabase(String path) async {
-    await sqflite.deleteDatabase(path);
-  }
 }

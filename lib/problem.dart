@@ -10,8 +10,10 @@ class Problem {
   final int id;
   final String title;
   final String content;
+  // floor doesn't store bools; just a 0 / 1 int
+  int favorited;
 
-  Problem(this.id, this.title, this.content);
+  Problem(this.id, this.title, this.content, this.favorited);
 
   String shortTitle() {
     if (title.length > MAX_TITLE_LENGTH) {
@@ -19,6 +21,11 @@ class Problem {
     } else {
       return title;
     }
+  }
+
+  @override
+  String toString() {
+    return "Problem $id [$favorited] ($shortTitle()).";
   }
 }
 
@@ -30,11 +37,17 @@ abstract class ProblemDao {
   @Query('SELECT * FROM Problem WHERE id = :id LIMIT 1')
   Future<Problem> getProblem(int id);
 
+  @Query('SELECT * FROM Problem WHERE favorited = 1')
+  Future<List<Problem>> getFavoriteProblems();
+
   @insert
   Future<void> insertProblem(Problem problem);
 
   @Query("DELETE FROM Problem")
   Future<void> deleteAllProblems();
+
+  @Query("ALTER TABLE Problem ADD COLUMN :name :type DEFAULT :defaultValue")
+  Future<void> addColumn(String name, String type, String defaultValue);
 }
 
 class ProblemWidget extends StatelessWidget {
