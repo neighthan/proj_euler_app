@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:scoped_model/scoped_model.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'code.dart';
 
 const int MAX_TITLE_LENGTH = 150;
@@ -250,6 +251,9 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
             children: <Widget>[
               Text(problem.title),
               Text(problem.content),
+              WebView(
+                initialUrl: "<html><body>HTML Test!</body></html>",
+              ),
               Row(
                 children: <Widget>[
                   Expanded(
