@@ -8,8 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:scoped_model/scoped_model.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'code.dart';
-
-const int MAX_TITLE_LENGTH = 150;
+import 'requests.dart';
 
 @entity
 class Problem {
@@ -17,12 +16,14 @@ class Problem {
   final int id;
   final String title;
   final String content;
-  // floor doesn't store bools; just a 0 / 1 int
   bool favorited;
+  bool solved;
+  String solution;
   @ignore
   bool expanded = false;
 
-  Problem(this.id, this.title, this.content, this.favorited);
+  Problem(this.id, this.title, this.content,
+      {this.favorited = false, this.solved = false, this.solution = ""});
 
   @override
   String toString() {
@@ -72,8 +73,8 @@ class ProblemModel extends Model {
     loadProblems();
   }
 
-  // you can await this to make sure the model is done loading
-  // this isn't expected to notifyListeners
+  // You can await this to make sure the model is done loading.
+  // This isn't expected to notifyListeners
   Future<void> loadProblems() async {
     if (loading) {
       allProblems = await problemDao.getAllProblems();
@@ -109,6 +110,13 @@ class ProblemModel extends Model {
 
   Future<void> insertOrUpdateCode(Code code) async {
     await codeDao.insertOrUpdateCode(code);
+  }
+
+  Future<void> addProblemSolution(Problem problem, String solution) async {
+    problem.solved = true;
+    problem.solution = solution;
+    await problemDao.updateProblem(problem);
+    notifyListeners();
   }
 }
 
@@ -216,6 +224,9 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
     if (code != null) {
       codeController.text = code.code;
       language = code.language;
+    } else {
+      codeController.text = "";
+      language = "julia"; // TODO: default language
     }
     loading = false;
   }
@@ -226,6 +237,38 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
       problemModel.toggleFavoriteProblem(problem);
     }
 
+    Widget solutionWidget;
+
+    if (problem.solved) {
+      solutionWidget = Text("Solution: ${problem.solution}");
+    } else {
+      solutionWidget = Row(
+        children: <Widget>[
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: TextField(
+                controller: answerController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: "Answer",
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10),
+            child: Builder(builder: (BuildContext context) {
+              return RaisedButton(
+                onPressed: () => submitAnswer(context),
+                child: Text("Submit"),
+              );
+            }),
+          ),
+        ],
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Problem ${problem.id}"),
@@ -234,10 +277,15 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
             onPressed: copyCode,
             icon: Icon(Icons.content_copy),
           ),
-          IconButton(
-            onPressed: saveCode,
-            icon: Icon(Icons.save),
-          ),
+          // to show a snackbar, you need a context that is below Scaffold;
+          // extracting things into separate widgets was too much of a pain,
+          // so we can use Builder to introduce a new context under Scaffold
+          Builder(builder: (BuildContext context) {
+            return IconButton(
+              onPressed: () => saveCode(context),
+              icon: Icon(Icons.save),
+            );
+          }),
           IconButton(
             onPressed: toggleFavorited,
             icon: Icon(problem.favorited ? Icons.star : Icons.star_border),
@@ -251,31 +299,13 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
             children: <Widget>[
               Text(problem.title),
               Text(problem.content),
-              WebView(
-                initialUrl: "<html><body>HTML Test!</body></html>",
+              SizedBox(
+                child: WebView(
+                  initialUrl: "<html><body>HTML Test!</body></html>",
+                ),
+                height: 200,
               ),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: TextField(
-                        controller: answerController,
-                        decoration: InputDecoration(
-                          hintText: "Answer",
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: RaisedButton(
-                      onPressed: submitAnswer,
-                      child: Text("Submit"),
-                    ),
-                  ),
-                ],
-              ),
+              solutionWidget,
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 10),
                 child: TextField(
@@ -319,9 +349,39 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
     });
   }
 
-  void submitAnswer() {
+  void submitAnswer(BuildContext context) async {
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text("Submitting answer."),
+    ));
     debugPrint(
         "submitted answer ${answerController.text} for problem ${problem.id}.");
+    final String solution = answerController.text;
+    int ret = await postSolution(problem.id, solution);
+    debugPrint("submit return = $ret");
+    String snackbarMsg;
+    Color color;
+    if (ret == CORRECT) {
+      problemModel.addProblemSolution(problem, solution);
+      snackbarMsg = "Correct answer!";
+      color = Colors.green;
+    } else if (ret == INCORRECT) {
+      snackbarMsg = "Incorrect answer.";
+      color = Colors.red;
+    } else if (ret == ERROR) {
+      // TODO: have postSolution return something more specific so we know what the error was.
+      // probably just have it return a string instead of an int? Then we show that string
+      // directly as the message. The color we can figure out.
+      snackbarMsg =
+          "Error submitting answer; check your cookie and internet connection.";
+      color = Colors.purple;
+    } else {
+      snackbarMsg = "Received unknown reponse.";
+      color = Colors.purple;
+    }
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text(snackbarMsg, style: TextStyle(color: Colors.black)),
+      backgroundColor: color,
+    ));
   }
 
   void copyCode() {
@@ -329,9 +389,12 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
     Clipboard.setData(ClipboardData(text: codeController.text));
   }
 
-  void saveCode() {
-    debugPrint("saving code ${codeController.text}");
+  void saveCode(BuildContext context) {
+    debugPrint("saving code:\n${codeController.text}");
     Code code = Code(problem.id, language, codeController.text);
     problemModel.insertOrUpdateCode(code);
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text("Code saved."),
+    ));
   }
 }
