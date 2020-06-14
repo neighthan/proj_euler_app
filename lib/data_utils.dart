@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 const String MAX_PROBLEM_ID_KEY = "maxProblemId";
 const String PROBLEM_TABLE_VERSION_KEY = "problemTableVersion";
 
-Future getProblem(int id) async {
+Future<Problem> getProblem(int id) async {
   Client client = Client();
   Response response = await client.get('https://projecteuler.net/problem=$id');
   dom.Document document = parse(response.body);
@@ -17,7 +17,7 @@ Future getProblem(int id) async {
     return null;
   }
   String content = document.querySelector("#content > .problem_content").text;
-  return {"id": id, "title": title, "content": content};
+  return Problem(id, title, content, false);
 }
 
 Future<int> getFromSharedPrefs(String key, {int defaultValue=0}) async {

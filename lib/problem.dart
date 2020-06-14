@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:scoped_model/scoped_model.dart';
 import 'code.dart';
+import 'requests.dart';
 
 const int MAX_TITLE_LENGTH = 150;
 
@@ -318,6 +319,7 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
   void submitAnswer() {
     debugPrint(
         "submitted answer ${answerController.text} for problem ${problem.id}.");
+    postSolution(problem.id, answerController.text);
   }
 
   void copyCode() {
