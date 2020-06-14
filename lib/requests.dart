@@ -56,6 +56,7 @@ Future<int> postSolution(int problemId, String solution) async {
     debugPrint("headers = " + response.headers.toString());
   }
 
+  // TODO: check for a captcha and let the user know in an error if we find one
   Document html = parse(response.body);
   final Element submitTokenElement =
       html.querySelector('input[name="submit_token"]');

@@ -12,10 +12,10 @@ These instructions assume you're using Chrome; if you use another browser, you'l
 (There's likely an easier way to get a cookie for the app, but this seems to work.)
 
 1. Go to projecteuler.net -> Account, select all Active Logins and click "Remove Selected".
-2. Refresh the page; you'll have to sign in again (make sure Remember Me is checked).
+2. Sign out then sign in again (make sure Remember Me is checked).
 3. Close the PE tab.
 4. Click the triple dots in the top-right corner then Settings.
-5. Under 'Privacy and security', click Site settings.
+5. Under "Privacy and security", click "Site settings".
 6. Click "Cookies and site date" and then "See all cookies and site data".
 7. At the top right, search for "euler".
 8. Click on the row for projecteuler.net.
@@ -63,16 +63,21 @@ class Settings extends StatelessWidget {
         return AlertDialog(
           title: Text("Set Cookie"),
           // might need SingleChildScrollView wrapping the content
-          content: Column(
-            children: <Widget>[
-              Text(COOKIE_INSTRUCTIONS),
-              TextField(
-                autofocus: true,
-                autocorrect: false,
-                enableSuggestions: false,
-                controller: cookieController,
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                Text(
+                  COOKIE_INSTRUCTIONS,
+                  style: TextStyle(fontSize: 12),
+                ),
+                TextField(
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  controller: cookieController,
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
           ),
           actions: <Widget>[
             FlatButton(
