@@ -216,6 +216,9 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
     if (code != null) {
       codeController.text = code.code;
       language = code.language;
+    } else {
+      codeController.text = "";
+      language = "julia"; // TODO: default language
     }
     loading = false;
   }
@@ -234,10 +237,15 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
             onPressed: copyCode,
             icon: Icon(Icons.content_copy),
           ),
-          IconButton(
-            onPressed: () => saveCode(context),
-            icon: Icon(Icons.save),
-          ),
+          // to show a snackbar, you need a context that is below Scaffold;
+          // extracting things into separate widgets was too much of a pain,
+          // so we can use Builder to introduce a new context under Scaffold
+          Builder(builder: (BuildContext context) {
+            return IconButton(
+              onPressed: () => saveCode(context),
+              icon: Icon(Icons.save),
+            );
+          }),
           IconButton(
             onPressed: toggleFavorited,
             icon: Icon(problem.favorited ? Icons.star : Icons.star_border),
@@ -266,10 +274,12 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
                   ),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: RaisedButton(
-                      onPressed: submitAnswer,
-                      child: Text("Submit"),
-                    ),
+                    child: Builder(builder: (BuildContext context) {
+                      return RaisedButton(
+                        onPressed: () => submitAnswer(context),
+                        child: Text("Submit"),
+                      );
+                    }),
                   ),
                 ],
               ),
@@ -316,11 +326,36 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
     });
   }
 
-  void submitAnswer() async {
+  void submitAnswer(BuildContext context) async {
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text("Submitting answer."),
+    ));
     debugPrint(
         "submitted answer ${answerController.text} for problem ${problem.id}.");
     int ret = await postSolution(problem.id, answerController.text);
     debugPrint("submit return = $ret");
+    String snackbarMsg;
+    Color color;
+    if (ret == CORRECT) {
+      snackbarMsg = "Correct answer!";
+      color = Colors.green;
+    } else if (ret == INCORRECT) {
+      snackbarMsg = "Incorrect answer.";
+      color = Colors.red;
+    } else if (ret == ERROR) {
+      // TODO: have postSolution return something more specific so we know what the error was.
+      // probably just have it return a string instead of an int? Then we show that string
+      // directly as the message. The color we can figure out.
+      snackbarMsg = "Error submitting answer; check your cookie and internet connection.";
+      color = Colors.purple;
+    } else {
+      snackbarMsg = "Received unknown reponse.";
+      color = Colors.purple;
+    }
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text(snackbarMsg, style: TextStyle(color: Colors.black)),
+      backgroundColor: color,
+    ));
   }
 
   void copyCode() {
@@ -329,7 +364,7 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
   }
 
   void saveCode(BuildContext context) {
-    debugPrint("saving code ${codeController.text}");
+    debugPrint("saving code:\n${codeController.text}");
     Code code = Code(problem.id, language, codeController.text);
     problemModel.insertOrUpdateCode(code);
     Scaffold.of(context).showSnackBar(SnackBar(
