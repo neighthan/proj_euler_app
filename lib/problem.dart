@@ -9,20 +9,19 @@ import 'package:scoped_model/scoped_model.dart';
 import 'code.dart';
 import 'requests.dart';
 
-const int MAX_TITLE_LENGTH = 150;
-
 @entity
 class Problem {
   @primaryKey
   final int id;
   final String title;
   final String content;
-  // floor doesn't store bools; just a 0 / 1 int
   bool favorited;
+  bool solved;
+  int solution;
   @ignore
   bool expanded = false;
 
-  Problem(this.id, this.title, this.content, this.favorited);
+  Problem(this.id, this.title, this.content, {this.favorited = false, this.solved = false, this.solution = 0});
 
   @override
   String toString() {

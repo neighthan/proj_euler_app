@@ -10,7 +10,7 @@ import 'code.dart';
 
 part 'database.g.dart'; // the generated code will be there
 
-@Database(version: 3, entities: [Problem, Code])
+@Database(version: 4, entities: [Problem, Code])
 abstract class AppDatabase extends FloorDatabase {
   ProblemDao get problemDao;
   CodeDao get codeDao;

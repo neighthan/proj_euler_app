@@ -9,7 +9,7 @@ const String MAX_PROBLEM_ID_KEY = "maxProblemId";
 const String PROBLEM_TABLE_VERSION_KEY = "problemTableVersion";
 const String COOKIE_KEY = "keepAliveCookie";
 
-Future<Problem> getProblem(int id) async {
+Future<Problem> getProblemFromWebsite(int id) async {
   Client client = Client();
   Response response = await client.get('https://projecteuler.net/problem=$id');
   dom.Document document = parse(response.body);
@@ -18,7 +18,7 @@ Future<Problem> getProblem(int id) async {
     return null;
   }
   String content = document.querySelector("#content > .problem_content").text;
-  return Problem(id, title, content, false);
+  return Problem(id, title, content);
 }
 
 Future<int> getMaxProblemId() async {

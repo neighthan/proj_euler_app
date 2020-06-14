@@ -23,6 +23,10 @@ Future<void> main() async {
       await database.execute(
           "CREATE TABLE IF NOT EXISTS Code (id INTEGER, language TEXT, code TEXT, PRIMARY KEY (id))");
     }),
+    Migration(3, 4, (database) async {
+      await database.execute("ALTER TABLE Problem ADD COLUMN solved INTEGER DEFAULT 0");
+      await database.execute("ALTER TABLE Problem ADD COLUMN solution INTEGER DEFAULT 0");
+    }),
   ];
 
   final database = await $FloorAppDatabase
