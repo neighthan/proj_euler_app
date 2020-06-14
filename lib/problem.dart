@@ -4,6 +4,7 @@ import 'package:ProjectEuler/main.dart';
 import 'package:floor/floor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:scoped_model/scoped_model.dart';
 
 const int MAX_TITLE_LENGTH = 150;
@@ -127,8 +128,9 @@ class _ProblemWidgetState extends State<ProblemWidget> {
         MaterialPageRoute<void>(
           builder: (BuildContext context) {
             return ScopedModelDescendant<ProblemModel>(
-              builder: (BuildContext context, Widget child, ProblemModel model) => ProblemDetailWidget(problem, model)
-            );
+                builder:
+                    (BuildContext context, Widget child, ProblemModel model) =>
+                        ProblemDetailWidget(problem, model));
           },
         ),
       );
@@ -181,15 +183,18 @@ class ProblemDetailWidget extends StatefulWidget {
   ProblemDetailWidget(this.problem, this.problemModel);
 
   @override
-  _ProblemDetailWidgetState createState() => _ProblemDetailWidgetState(problem, problemModel);
+  _ProblemDetailWidgetState createState() =>
+      _ProblemDetailWidgetState(problem, problemModel);
 }
 
 class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
   final Problem problem;
   final ProblemModel problemModel;
   final TextEditingController answerController;
+  final TextEditingController codeController;
   _ProblemDetailWidgetState(this.problem, this.problemModel)
-      : answerController = TextEditingController();
+      : answerController = TextEditingController(),
+        codeController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +216,7 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
         ],
       ),
       body: Center(
-        child: Column(
+        child: ListView(
           children: <Widget>[
             Text(problem.title),
             Text(problem.content),
@@ -236,6 +241,13 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
                   ),
                 ),
               ],
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: TextField(
+                controller: codeController,
+                maxLines: null,
+              ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -266,6 +278,7 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
 
   void copyCode() {
     debugPrint("copying code");
+    Clipboard.setData(ClipboardData(text: codeController.text));
   }
 
   void saveCode() {
