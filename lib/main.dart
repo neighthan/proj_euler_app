@@ -6,6 +6,7 @@ import 'package:scoped_model/scoped_model.dart';
 import 'database.dart';
 import 'problem.dart';
 import 'code.dart';
+import 'settings.dart';
 
 // any name for the .db file is fine; the class name is Floor<name of db class>
 const String DB_NAME = "proj_euler2.db";
@@ -121,6 +122,10 @@ class _ProblemListState extends State<ProblemList> {
             icon: Icon(showingFavorites ? Icons.star : Icons.star_border),
             onPressed: toggleShowingFavorites,
           ),
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () => navigateToSettings(context),
+          ),
         ],
       ),
       body: Center(
@@ -129,12 +134,19 @@ class _ProblemListState extends State<ProblemList> {
     );
   }
 
-  toggleShowingFavorites() {
+  void toggleShowingFavorites() {
     // I use setState here instead of having the model notifyListeners because
     // no other widgets should need updating based on this call
     setState(() {
       showingFavorites = !showingFavorites;
       visibleProblems = problemModel.toggleOnlyFavoritesVisible();
     });
+  }
+
+  void navigateToSettings(BuildContext context) {
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (BuildContext context) {
+      return Settings();
+    }));
   }
 }
