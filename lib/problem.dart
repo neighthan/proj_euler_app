@@ -74,7 +74,8 @@ class ProblemWidget extends StatelessWidget {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (BuildContext context) {
-            return ProblemDetailWidget(id, title, content, favorited, toggleFavorited);
+            return ProblemDetailWidget(
+                id, title, content, favorited, toggleFavorited);
           },
         ),
       );
@@ -142,11 +143,13 @@ class ProblemDetailWidget extends StatelessWidget {
             Text(content),
             Row(
               children: <Widget>[
-                TextField(
-                  // maxLines: null, might need this?
-                  controller: answerController,
-                  decoration: InputDecoration(
-                    hintText: "Answer",
+                Expanded(
+                  child: TextField(
+                    // maxLines: null, might need this?
+                    controller: answerController,
+                    decoration: InputDecoration(
+                      hintText: "Answer",
+                    ),
                   ),
                 ),
                 RaisedButton(
