@@ -234,7 +234,7 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
             icon: Icon(Icons.content_copy),
           ),
           IconButton(
-            onPressed: saveCode,
+            onPressed: () => saveCode(context),
             icon: Icon(Icons.save),
           ),
           IconButton(
@@ -325,9 +325,12 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
     Clipboard.setData(ClipboardData(text: codeController.text));
   }
 
-  void saveCode() {
+  void saveCode(BuildContext context) {
     debugPrint("saving code ${codeController.text}");
     Code code = Code(problem.id, language, codeController.text);
     problemModel.insertOrUpdateCode(code);
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text("Code saved."),
+    ));
   }
 }
