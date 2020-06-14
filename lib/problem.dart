@@ -316,10 +316,11 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
     });
   }
 
-  void submitAnswer() {
+  void submitAnswer() async {
     debugPrint(
         "submitted answer ${answerController.text} for problem ${problem.id}.");
-    postSolution(problem.id, answerController.text);
+    int ret = await postSolution(problem.id, answerController.text);
+    debugPrint("submit return = $ret");
   }
 
   void copyCode() {

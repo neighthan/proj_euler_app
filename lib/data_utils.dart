@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const String MAX_PROBLEM_ID_KEY = "maxProblemId";
 const String PROBLEM_TABLE_VERSION_KEY = "problemTableVersion";
+const String COOKIE_KEY = "keepAliveCookie";
 
 Future<Problem> getProblem(int id) async {
   Client client = Client();
@@ -20,16 +21,6 @@ Future<Problem> getProblem(int id) async {
   return Problem(id, title, content, false);
 }
 
-Future<int> getFromSharedPrefs(String key, {int defaultValue=0}) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  return prefs.getInt(key) ?? defaultValue;
-}
-
-Future<void> setInSharedPrefs(String key, int value) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  prefs.setInt(key, value);
-}
-
 Future<int> getMaxProblemId() async {
   Client client = Client();
   Response response = await client.get('https://projecteuler.net/recent');
@@ -40,7 +31,8 @@ Future<int> getMaxProblemId() async {
 
 Future<int> getMaxProblemStoredId() async {
   // the max problem id of problems stored in the database
-  return getFromSharedPrefs(MAX_PROBLEM_ID_KEY);
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getInt(MAX_PROBLEM_ID_KEY) ?? 0;
 }
 
 Future<void> updateMaxProbleStoredId(int maybeMaxId) async {
@@ -52,4 +44,14 @@ Future<void> updateMaxProbleStoredId(int maybeMaxId) async {
 Future<void> resetMaxProblemStoredId() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   await prefs.setInt(MAX_PROBLEM_ID_KEY, 0);
+}
+
+Future<String> getCookie() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getString(COOKIE_KEY);
+}
+
+Future<void> setCookie(String cookie) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setString(COOKIE_KEY, cookie);
 }
