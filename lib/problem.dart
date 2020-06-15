@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ffi';
 
 import 'package:ProjectEuler/main.dart';
@@ -48,6 +49,9 @@ abstract class ProblemDao {
   @update
   Future<void> updateProblem(Problem problem);
 
+  @Insert(onConflict: OnConflictStrategy.REPLACE)
+  Future<void> insertOrUpdateProblem(Problem problem);
+
   @Query("DELETE FROM Problem")
   Future<void> deleteAllProblems();
 }
@@ -95,7 +99,7 @@ class ProblemModel extends Model {
     return visibleProblems;
   }
 
-  toggleFavoriteProblem(Problem problem) {
+  void toggleFavoriteProblem(Problem problem) {
     problem.favorited = !problem.favorited;
     if (onlyFavoritesVisible && !problem.favorited) {
       visibleProblems.remove(problem);
@@ -110,6 +114,20 @@ class ProblemModel extends Model {
 
   Future<void> insertOrUpdateCode(Code code) async {
     await codeDao.insertOrUpdateCode(code);
+  }
+
+  // this doesn't notify so we don't have to rebuild widgets after each new problem when
+  // we're loading all of them; notifyProblemsUpdated should be called when an update should be done
+  Future<void> insertOrUpdateProblem(Problem problem) async {
+    await problemDao.insertOrUpdateProblem(problem);
+    allProblems.add(problem);
+    if (onlyFavoritesVisible && problem.favorited) { // probably never
+      visibleProblems.add(problem);
+    }
+  }
+
+  void notifyProblemsUpdated() {
+    notifyListeners();
   }
 
   Future<void> addProblemSolution(Problem problem, String solution) async {
@@ -209,6 +227,8 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
   final ProblemModel problemModel;
   final TextEditingController answerController;
   final TextEditingController codeController;
+  WebViewController webViewController;
+  double webViewHeight = 200;
   static const int swipeThreshold = 500; // even higher would probably be fine
   String language = "julia";
   bool loading;
@@ -298,12 +318,24 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
           child: ListView(
             children: <Widget>[
               Text(problem.title),
-              Text(problem.content),
               SizedBox(
                 child: WebView(
-                  initialUrl: "<html><body>HTML Test!</body></html>",
+                  initialUrl: Uri.dataFromString(
+                    "<html><body>${problem.content}</body></html>",
+                    mimeType: 'text/html',
+                    encoding: Encoding.getByName("utf-8"),
+                  ).toString(),
+                  onWebViewCreated: (WebViewController controller) {
+                    webViewController = controller;
+                    // controller.evaluateJavascript("document.body.clientHeight").then((height) {
+                      // setState(() {
+                        // webViewHeight = double.parse(height);
+                      // });
+                    // });
+                  },
+                  javascriptMode: JavascriptMode.unrestricted,
                 ),
-                height: 200,
+                height: webViewHeight,
               ),
               solutionWidget,
               Padding(
@@ -343,6 +375,12 @@ class _ProblemDetailWidgetState extends State<ProblemDetailWidget> {
 
     setState(() {
       problem = problemModel.visibleProblems[newIdx];
+      String newURL = Uri.dataFromString(
+                    "<html><body>${problem.content}</body></html>",
+                    mimeType: 'text/html',
+                    encoding: Encoding.getByName("utf-8"),
+                  ).toString();
+      webViewController.loadUrl(newURL);
       answerController.text = "";
       loading = true;
       loadCode();

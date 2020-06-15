@@ -113,7 +113,19 @@ class Settings extends StatelessWidget {
     Share.share(code);
   }
 
-  void checkForNewProblems() {
+  void checkForNewProblems() async {
     debugPrint("checking for new problems");
+    int maxProblemId = await getMaxProblemId();
+    // int currentMaxId = await getMaxProblemStoredId();
+    int currentMaxId = 0;
+    if (maxProblemId > currentMaxId) {
+      for (int problemId = currentMaxId + 1; problemId <= maxProblemId; problemId++) {
+        Problem problem = await getProblemFromWebsite(problemId);
+        model.insertOrUpdateProblem(problem);
+        debugPrint("Added $problemId");
+      }
+      model.notifyProblemsUpdated();
+      updateMaxProbleStoredId(maxProblemId);
+    }
   }
 }

@@ -11,16 +11,21 @@ const String COOKIE_KEY = "keepAliveCookie";
 
 Future<Problem> getProblemFromWebsite(int id) async {
   Client client = Client();
-  Response response = await client.get('https://projecteuler.net/problem=$id');
-  dom.Document document = parse(response.body);
-  String title = document.querySelector("#content > h2").text;
-  if (title == "Problems Archive") {
-    return null;
-  }
-  String content = document.querySelector("#content > .problem_content").text;
+  // Response response = await client.get('https://projecteuler.net/problem=$id');
+  Response response = await client.get('https://projecteuler.net/minimal=$id');
+  "Data for that problem cannot be found";
+  // dom.Document document = parse(response.body);
+  // String title = document.querySelector("#content > h2").text;
+  // if (title == "Problems Archive") {
+    // return null;
+  // }
+  // String content = document.querySelector("#content > .problem_content").text;
+  String title = "Need to get a title";
+  String content = response.body;
   return Problem(id, title, content);
 }
 
+// TODO: update this to use the minimal API
 Future<int> getMaxProblemId() async {
   Client client = Client();
   Response response = await client.get('https://projecteuler.net/recent');
