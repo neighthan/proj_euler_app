@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:share/share.dart';
 import 'data_utils.dart';
 import 'code.dart';
+import 'problem.dart';
 
 const String COOKIE_INSTRUCTIONS = """
 The "cookie" is used to log in to the Project Euler website with your account. This lets the app submit answers on your behalf. If you don't want to provide the cookie, all functionality except for answer submissions will still work.
@@ -23,6 +25,9 @@ These instructions assume you're using Chrome; if you use another browser, you'l
 10. Delete the keep_alive and PHPSESSID cookies from Chrome by clicking "Remove All" (you'll have to sign in again on the website the next time that you visit it; this is to ensure you have separate cookies for the app and the browser).""";
 
 class Settings extends StatelessWidget {
+  final ProblemModel model;
+  Settings(this.model);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,11 +109,8 @@ class Settings extends StatelessWidget {
 
   void exportCode() async {
     debugPrint("exporting code");
-    // make this page a ScopedModel so we can get codeDao;
-    // see how the ProblemWidgets are created in main.dart for an example;
-    // just update this in navigateToSettings
-    // String code = await exportCodeTable(codeDao);
-    // Share.share()
+    final String code = await exportCodeTable(model.codeDao);
+    Share.share(code);
   }
 
   void checkForNewProblems() {

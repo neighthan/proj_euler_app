@@ -1,11 +1,8 @@
-import 'package:ProjectEuler/data_utils.dart';
-import 'package:ProjectEuler/problem.dart';
 import 'package:flutter/material.dart';
 import 'package:floor/floor.dart';
 import 'package:scoped_model/scoped_model.dart';
 import 'database.dart';
 import 'problem.dart';
-import 'code.dart';
 import 'settings.dart';
 
 // any name for the .db file is fine; the class name is Floor<name of db class>
@@ -85,19 +82,6 @@ class _ProblemListState extends State<ProblemList> {
     });
   }
 
-  // int maxProblemId = await getMaxProblemId();
-  // int currentMaxId = await getMaxProblemStoredId();
-  // if (maxProblemId > currentMaxId) {
-  //   for (int problemId = currentMaxId + 1; problemId <= maxProblemId; problemId++) {
-  //     Map<String, Object> problemDict = await getProblem(problemId);
-  //     assert(problemDict != null);
-  //     Problem problem = Problem(problemDict["id"], problemDict["title"], problemDict["content"]);
-  //     widget.problemDao.insertProblem(problem);
-  //     problems.add(problem);
-  //   }
-  //   updateMaxProbleStoredId(maxProblemId);
-  // }
-
   @override
   Widget build(BuildContext context) {
     Widget loadingOrList;
@@ -150,7 +134,9 @@ class _ProblemListState extends State<ProblemList> {
   void navigateToSettings(BuildContext context) {
     Navigator.of(context)
         .push(MaterialPageRoute<void>(builder: (BuildContext context) {
-      return Settings();
+      return ScopedModelDescendant<ProblemModel>(
+        builder: (BuildContext context, Widget child, ProblemModel model) => Settings(model)
+      );
     }));
   }
 }
